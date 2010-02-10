@@ -4,15 +4,17 @@
 #include <ei.h>
 #include <erl_interface.h>
 
-#define CMD_SET_UID   1
-#define CMD_SET_GID   2
-#define CMD_SET_EUID  3
-#define CMD_SET_EGID  4
+#define CMD_SET_UID       1
+#define CMD_SET_GID       2
+#define CMD_SET_EUID      3
+#define CMD_SET_EGID      4
 
-#define CMD_GET_UID   51
-#define CMD_GET_GID   52
-#define CMD_GET_EUID  53
-#define CMD_GET_EGID  54
+#define CMD_GET_UID       51
+#define CMD_GET_GID       52
+#define CMD_GET_EUID      53
+#define CMD_GET_EGID      54
+
+#define CMD_FORMAT_ERRNO  100
 
 typedef struct setuid_drv_t {
   ErlDrvPort      port;
@@ -52,4 +54,7 @@ set_uid (setuid_drv_t *drv, uid_setter_1_t setter, char *uid);
 
 static void
 set_gid (setuid_drv_t *drv, gid_setter_1_t setter, char *gid);
+
+static void
+format_errno (setuid_drv_t *drv, char *err);
 

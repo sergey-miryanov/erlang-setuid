@@ -19,14 +19,15 @@
 %% Internal
 -export ([start_link/0]).
 
--define ('CMD_SET_UID',   1).
--define ('CMD_SET_GID',   2).
--define ('CMD_SET_EUID',  3).
--define ('CMD_SET_EGID',  4).
--define ('CMD_GET_UID',   51).
--define ('CMD_GET_GID',   52).
--define ('CMD_GET_EUID',  53).
--define ('CMD_GET_EGID',  54).
+-define ('CMD_SET_UID',       1).
+-define ('CMD_SET_GID',       2).
+-define ('CMD_SET_EUID',      3).
+-define ('CMD_SET_EGID',      4).
+-define ('CMD_GET_UID',       51).
+-define ('CMD_GET_GID',       52).
+-define ('CMD_GET_EUID',      53).
+-define ('CMD_GET_EGID',      54).
+-define ('CMD_FORMAT_ERRNO',  100).
 
 %% API
 setuid (UID) when is_integer (UID) ->     gen_server:call (setuid, {set, ?CMD_SET_UID, UID}).
@@ -125,7 +126,7 @@ terminate (_Reason, _State) ->
 %% @hidden
 %% --------------------------------------------------------------------
 handle_call ({set, Command, ID}, _From, Port) ->
-  Reply = control_drv (Port, Command, int_to_binary (ID)),
+  Reply = format_result (Port, control_drv (Port, Command, int_to_binary (ID))),
   {reply, Reply, Port};
 handle_call ({get, Command}, _From, Port) ->
   Reply = control_drv (Port, Command),
@@ -142,11 +143,16 @@ control_drv (Port, Command, Data)
     port_control (Port, Command, Data),
     wait_result (Port).
 
-
 wait_result (_Port) ->
   receive
 	  Smth -> Smth
   end.
+
+format_result (_Port, {ok}) ->
+  {ok};
+format_result (Port, {error, Errno}) ->
+  {error, control_drv (Port, ?CMD_FORMAT_ERRNO, int_to_binary (Errno))}.
+
 
 int_to_binary (Int) ->
   erlang:list_to_binary (erlang:integer_to_list (Int)).

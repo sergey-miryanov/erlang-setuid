@@ -117,6 +117,9 @@ control (ErlDrvData p,
     case CMD_GET_EGID:
       get_gid (drv, getegid);
       break;
+    case CMD_FORMAT_ERRNO:
+      format_errno (drv, buf);
+      break;
     }
 
   return 0;
@@ -207,3 +210,17 @@ get_gid (setuid_drv_t *drv, uid_getter_t getter)
                       sizeof (result) / sizeof (result[0]));
 }
 
+static void
+format_errno (setuid_drv_t *drv, char *buf)
+{
+  char *msg = strerror (atoi (buf));
+  size_t len = strlen (msg);
+
+  ErlDrvTermData result [] = {
+      ERL_DRV_STRING, (ErlDrvTermData)msg, len
+  };
+
+  driver_output_term (drv->port, 
+                      result,
+                      sizeof (result) / sizeof (result[0]));
+}
