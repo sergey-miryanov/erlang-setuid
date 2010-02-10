@@ -9,6 +9,11 @@
 #define CMD_SET_EUID  3
 #define CMD_SET_EGID  4
 
+#define CMD_GET_UID   51
+#define CMD_GET_GID   52
+#define CMD_GET_EUID  53
+#define CMD_GET_EGID  54
+
 typedef struct setuid_drv_t {
   ErlDrvPort      port;
   FILE            *log;
@@ -30,14 +35,21 @@ control (ErlDrvData drv,
   char **rbuf,
   int rlen);
 
-static void
-set_uid (setuid_drv_t *drv,
-  char *uid);
+typedef uid_t (*uid_getter_t) ();
+typedef gid_t (*gid_getter_t) ();
+
+typedef int (*uid_setter_1_t) (uid_t);
+typedef int (*gid_setter_1_t) (gid_t);
 
 static void
-set_gid (setuid_drv_t *drv,
-  char *gid);
+get_uid (setuid_drv_t *drv, uid_getter_t getter);
 
 static void
-set_euid (setuid_drv_t *drv,
-  char *euid);
+get_gid (setuid_drv_t *drv, gid_getter_t getter);
+
+static void
+set_uid (setuid_drv_t *drv, uid_setter_1_t setter, char *uid);
+
+static void
+set_gid (setuid_drv_t *drv, gid_setter_1_t setter, char *gid);
+

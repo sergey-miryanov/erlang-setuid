@@ -94,15 +94,28 @@ control (ErlDrvData p,
   switch (command)
     {
     case CMD_SET_UID:
-      set_uid (drv, buf);
+      set_uid (drv, setuid, buf);
       break;
     case CMD_SET_GID:
-      set_gid (drv, buf);
+      set_gid (drv, setgid, buf);
       break;
     case CMD_SET_EUID:
-      set_euid (drv, buf);
+      set_uid (drv, seteuid, buf);
       break;
     case CMD_SET_EGID:
+      set_gid (drv, setegid, buf);
+      break;
+    case CMD_GET_UID:
+      get_uid (drv, getuid);
+      break;
+    case CMD_GET_GID:
+      get_gid (drv, getgid);
+      break;
+    case CMD_GET_EUID:
+      get_uid (drv, geteuid);
+      break;
+    case CMD_GET_EGID:
+      get_gid (drv, getegid);
       break;
     }
 
@@ -137,12 +150,11 @@ send_errno (setuid_drv_t *drv)
 }
 
 static void
-set_uid (setuid_drv_t *drv,
-         char *cmd)
+set_uid (setuid_drv_t *drv, uid_setter_1_t setter, char *cmd)
 {
   uid_t uid = (uid_t) atoi (cmd);
 
-  if (!setuid (uid))
+  if (!(*setter) (uid))
     {
       send_ok (drv);
     }
@@ -153,12 +165,11 @@ set_uid (setuid_drv_t *drv,
 }
 
 static void
-set_gid (setuid_drv_t *drv,
-         char *cmd)
+set_gid (setuid_drv_t *drv, gid_setter_1_t setter, char *cmd)
 {
-  uid_t uid = (uid_t) atoi (cmd);
+  gid_t gid = (gid_t) atoi (cmd);
 
-  if (!setgid (uid))
+  if (!(*setter) (gid))
     {
       send_ok (drv);
     }
@@ -169,18 +180,30 @@ set_gid (setuid_drv_t *drv,
 }
 
 static void
-set_euid (setuid_drv_t *drv,
-          char *cmd)
+get_uid (setuid_drv_t *drv, uid_getter_t getter)
 {
-  uid_t uid = (uid_t) atoi (cmd);
+  ErlDrvTermData result [] = {
+      ERL_DRV_ATOM, drv->ok_atom,
+      ERL_DRV_UINT, (*getter) (),
+      ERL_DRV_TUPLE, 2
+  };
 
-  if (!seteuid (uid))
-    {
-      send_ok (drv);
-    }
-  else
-    {
-      send_errno (drv);
-    }
+  driver_output_term (drv->port,
+                      result,
+                      sizeof (result) / sizeof (result[0]));
+}
+
+static void
+get_gid (setuid_drv_t *drv, uid_getter_t getter)
+{
+  ErlDrvTermData result [] = {
+      ERL_DRV_ATOM, drv->ok_atom,
+      ERL_DRV_UINT, (*getter) (),
+      ERL_DRV_TUPLE, 2
+  };
+
+  driver_output_term (drv->port,
+                      result,
+                      sizeof (result) / sizeof (result[0]));
 }
 

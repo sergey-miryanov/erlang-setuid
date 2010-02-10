@@ -4,8 +4,8 @@
 -behaviour (gen_server).
 
 %% API
--export ([setuid/1, setgid/1]).
--export ([seteuid/1]).
+-export ([setuid/1, setgid/1, seteuid/1, setegid/1]).
+-export ([getuid/0, getgid/0, geteuid/0, getegid/0]).
 
 %% gen_server callbacks
 -export ([
@@ -22,16 +22,22 @@
 -define ('CMD_SET_UID',   1).
 -define ('CMD_SET_GID',   2).
 -define ('CMD_SET_EUID',  3).
+-define ('CMD_SET_EGID',  4).
+-define ('CMD_GET_UID',   51).
+-define ('CMD_GET_GID',   52).
+-define ('CMD_GET_EUID',  53).
+-define ('CMD_GET_EGID',  54).
 
 %% API
-setuid (UID) when is_integer (UID) ->
-  gen_server:call (setuid, {setuid, UID}).
+setuid (UID) when is_integer (UID) ->     gen_server:call (setuid, {set, ?CMD_SET_UID, UID}).
+setgid (GID) when is_integer (GID) ->     gen_server:call (setuid, {set, ?CMD_SET_GID, GID}).
+seteuid (EUID) when is_integer (EUID) ->  gen_server:call (setuid, {set, ?CMD_SET_EUID, EUID}).
+setegid (EGID) when is_integer (EGID) ->  gen_server:call (setuid, {set, ?CMD_SET_EGID, EGID}).
 
-setgid (GID) when is_integer (GID) ->
-  gen_server:call (setuid, {setgid, GID}).
-
-seteuid (EUID) when is_integer (EUID) ->
-  gen_server:call (setuid, {seteuid, EUID}).
+getuid () ->  gen_server:call (setuid, {get, ?CMD_GET_UID}).
+getgid () ->  gen_server:call (setuid, {get, ?CMD_GET_GID}).
+geteuid () -> gen_server:call (setuid, {get, ?CMD_GET_EUID}).
+getegid () -> gen_server:call (setuid, {get, ?CMD_GET_EGID}).
 
 %% --------------------------------------------------------------------
 %% @spec start_link () -> {ok, Pid} | ignore | {error, Error}
@@ -118,17 +124,18 @@ terminate (_Reason, _State) ->
 %% @end
 %% @hidden
 %% --------------------------------------------------------------------
-handle_call ({setuid, UID}, _From, Port) ->
-  Reply = control_drv (Port, ?CMD_SET_UID, int_to_binary (UID)),
+handle_call ({set, Command, ID}, _From, Port) ->
+  Reply = control_drv (Port, Command, int_to_binary (ID)),
   {reply, Reply, Port};
-handle_call ({setgid, GID}, _From, Port) ->
-  Reply = control_drv (Port, ?CMD_SET_GID, int_to_binary (GID)),
-  {reply, Reply, Port};
-handle_call ({seteuid, EUID}, _From, Port) ->
-  Reply = control_drv (Port, ?CMD_SET_EUID, int_to_binary (EUID)),
+handle_call ({get, Command}, _From, Port) ->
+  Reply = control_drv (Port, Command),
   {reply, Reply, Port};
 handle_call (Request, _From, Port) ->
   {reply, {unknown, Request}, Port}.
+
+control_drv (Port, Command) when is_port (Port) and is_integer (Command) ->
+  port_control (Port, Command, <<>>),
+  wait_result (Port).
 
 control_drv (Port, Command, Data) 
   when is_port (Port) and is_integer (Command) and is_binary (Data) ->
@@ -143,3 +150,4 @@ wait_result (_Port) ->
 
 int_to_binary (Int) ->
   erlang:list_to_binary (erlang:integer_to_list (Int)).
+
