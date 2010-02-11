@@ -61,8 +61,7 @@ init ([]) ->
       Port = open_port ({spawn, "setuid_drv"}, [binary]),
       {ok, Port};
     {error, Error} ->
-      io:format ("Error loading setuid driver: ~p~n", [erl_ddll:format_error (Error)]),
-      {stop, failed}
+      {stop, string:join (["Error loading setuid driver: ", erl_ddll:format_error (Error)], "")}
   end.
 
 %% --------------------------------------------------------------------
